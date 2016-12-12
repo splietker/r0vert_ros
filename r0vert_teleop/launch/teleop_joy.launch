@@ -1,0 +1,18 @@
+<launch>
+  <!-- Serial Node-->
+  <node pkg="rosserial_python" type="serial_node.py" name="serial_node" respawn="true">
+    <param name="port" value="/dev/ttyACM0"/>
+    <param name="baud" value="115200"/>
+  </node>
+
+  <!-- Joystick Node -->
+  <node respawn="true" pkg="joy" type="joy_node" name="joy_node" >
+    <param name="dev" type="string" value="/dev/input/js0" />
+  </node>
+
+  <!-- Teleop Node -->
+  <node pkg="r0vert_teleop" type="teleop_joy" name="teleop_node">
+    <param name="axis_linear" value="1" type="int"/>
+    <param name="axis_angular" value="0" type="int"/>
+  </node>
+</launch>

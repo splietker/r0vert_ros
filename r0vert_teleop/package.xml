@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>r0vert_teleop</name>
+  <version>0.1.0</version>
+  <description>
+    This package provides functionality for operating r0vert remotely.
+  </description>
+  <maintainer email="malte.splietker@gmail.com">Malte Splietker</maintainer>
+  <license>BSD</license>
+
+  <url>https://github.com/splietker/r0vert_ros</url>
+  <author>Malte Splietker</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>joy</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>turtle_actionlib</build_depend>
+
+  <run_depend>joy</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>turtle_actionlib</run_depend>
+</package>
