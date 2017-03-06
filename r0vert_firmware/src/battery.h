@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, Malte Splietker
+/* Copyright (c) 2017, Malte Splietker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,53 +24,36 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MOTOR_MOTOR_H_
-#define _MOTOR_MOTOR_H_
+#ifndef R0VERT_FIRMWARE_BATTERY_H
+#define R0VERT_FIRMWARE_BATTERY_H
 
-/**
- * An H-Bride driven motor.
- *
- * Implementation for driving a motor driven by an H-Bridge (e.g. LM298). The H-Bridge needs to be connected to two PWM
- * pins (pin_a and pin_b).
- */
-class Motor
+#include <Arduino.h>
+
+class Battery
 {
 public:
-  Motor(int pin_a, int pin_b);
+  Battery(uint8_t pin, float conversion_factor);
 
-  ~Motor();
+  void Update();
 
-  /**
-   * Sets the speed of the motor.
-   * Sets the new speed and direction values and applies the changes to the pins. If the given value is positiv the
-   * new direction is FORWARD, BACKWARD otherwise.
-   *
-   * @param speed Value between -1 and 1.
-   */
-  void SetSpeed(float speed);
+  float Voltage();
 
 private:
   /**
-   * Direction of rotation.
+   * Pin for analog reading.
    */
-  enum Direction
-  {
-    FORWARD,
-    BACKWARD
-  };
-
-  static const float min_duty_cycle;
-  static const float max_duty_cycle;
+  uint8_t pin_;
 
   /**
-   * Applies direction and speed to the pins.
+   * Factor converting readings in [0, 1] to volts.
    */
-  void Write();
+  float conversion_factor_;
 
-  int pin_a_;
-  int pin_b_;
-  float speed_;
-  Direction direction_;
+  /**
+   * Smoothed reading.
+   */
+  float value_;
 };
 
-#endif /* _MOTOR_MOTOR_H_ */
+
+#endif //R0VERT_FIRMWARE_BATTERY_H

@@ -45,3 +45,5 @@ include_directories("$ENV{HOME}/.platformio/packages/framework-arduinoavr/librar
 include_directories("$ENV{HOME}/.platformio/packages/toolchain-atmelavr/avr/include")
 include_directories("$ENV{HOME}/.platformio/packages/toolchain-atmelavr/lib/gcc/avr/4.8.1/include-fixed")
 include_directories("$ENV{HOME}/.platformio/packages/toolchain-atmelavr/lib/gcc/avr/4.8.1/include")
+
+aux_source_directory(/home/msp/projects/r0vert/catkin_ws_kinetic/src/r0vert_ros/r0vert_firmware/src SRC_LIST)

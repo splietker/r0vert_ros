@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, Malte Splietker
+/* Copyright (c) 2017, Malte Splietker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,53 +24,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MOTOR_MOTOR_H_
-#define _MOTOR_MOTOR_H_
+#include "battery.h"
 
-/**
- * An H-Bride driven motor.
- *
- * Implementation for driving a motor driven by an H-Bridge (e.g. LM298). The H-Bridge needs to be connected to two PWM
- * pins (pin_a and pin_b).
- */
-class Motor
+Battery::Battery(uint8_t pin, float conversion_factor)
+    : pin_(pin), conversion_factor_(conversion_factor), value_(-1.0)
 {
-public:
-  Motor(int pin_a, int pin_b);
 
-  ~Motor();
+}
 
-  /**
-   * Sets the speed of the motor.
-   * Sets the new speed and direction values and applies the changes to the pins. If the given value is positiv the
-   * new direction is FORWARD, BACKWARD otherwise.
-   *
-   * @param speed Value between -1 and 1.
-   */
-  void SetSpeed(float speed);
+// Lower bound under which measurements are no longer considered valide (~3.8V)
+const uint16_t measurement_threshold = 250;
 
-private:
-  /**
-   * Direction of rotation.
-   */
-  enum Direction
+void Battery::Update()
+{
+  int current_value = analogRead(pin_);
+  if (current_value < measurement_threshold)
   {
-    FORWARD,
-    BACKWARD
-  };
+    value_ = 0;
+    return;
+  }
+  if (value_ <= measurement_threshold)
+  {
+    value_ = current_value;
+    return;
+  }
 
-  static const float min_duty_cycle;
-  static const float max_duty_cycle;
+  // Smoothing factor
+  const float alpha = 0.1;
+  value_= alpha * current_value + (1 - alpha) * value_;
+}
 
-  /**
-   * Applies direction and speed to the pins.
-   */
-  void Write();
-
-  int pin_a_;
-  int pin_b_;
-  float speed_;
-  Direction direction_;
-};
-
-#endif /* _MOTOR_MOTOR_H_ */
+float Battery::Voltage()
+{
+  if (value_ < measurement_threshold)
+  {
+    return 0;
+  }
+  return conversion_factor_ * value_ / 1024.0;
+}

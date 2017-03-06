@@ -28,15 +28,33 @@
 
 #include <ros.h>
 #include <turtle_actionlib/Velocity.h>
-#include <std_msgs/Float32.h>
+#include <r0vert_msgs/BatteryVoltage.h>
 
-#include <motor.h>
+#include "motor.h"
+#include "battery.h"
+#include "timer.h"
 
 
 ros::NodeHandle nh;
 
+// Subscribers
+void velocity_callback(const turtle_actionlib::Velocity &velocity_msg);
+ros::Subscriber<turtle_actionlib::Velocity> velocity_subscriber("velocity", &velocity_callback);
+
+// Publishers
+r0vert_msgs::BatteryVoltage battery_msg;
+ros::Publisher battery_publisher("battery", &battery_msg);
+
+// Timer set to publish status every 1000ms
+void publish_status();
+Timer publishing_timer(1000, &publish_status);
+
+// Hardware
 Motor motor_left(4, 5);
 Motor motor_right(6, 7);
+
+Battery battery1(A0, 15.275);
+Battery battery2(A1, 15.218);
 
 void velocity_callback(const turtle_actionlib::Velocity &velocity_msg)
 {
@@ -81,19 +99,29 @@ void velocity_callback(const turtle_actionlib::Velocity &velocity_msg)
   }
 }
 
-ros::Subscriber<turtle_actionlib::Velocity> velocity_subscriber("velocity", &velocity_callback);
-std_msgs::Float32 battery_msg;
-ros::Publisher battery_publisher("battery", &battery_msg);
+void publish_status()
+{
+  battery_msg.battery1 = battery1.Voltage();
+  battery_msg.battery2 = battery2.Voltage();
+  battery_publisher.publish(&battery_msg);
+}
 
 void setup()
 {
   nh.getHardware()->setBaud(115200);
   nh.initNode();
   nh.subscribe(velocity_subscriber);
+  nh.advertise(battery_publisher);
 }
 
 void loop()
 {
   nh.spinOnce();
+
+  battery1.Update();
+  battery2.Update();
+
+  publishing_timer.Update();
+
   delay(1);
 }

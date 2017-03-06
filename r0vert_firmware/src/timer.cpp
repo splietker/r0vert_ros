@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, Malte Splietker
+/* Copyright (c) 2017, Malte Splietker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,53 +24,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MOTOR_MOTOR_H_
-#define _MOTOR_MOTOR_H_
+#include <Arduino.h>
 
-/**
- * An H-Bride driven motor.
- *
- * Implementation for driving a motor driven by an H-Bridge (e.g. LM298). The H-Bridge needs to be connected to two PWM
- * pins (pin_a and pin_b).
- */
-class Motor
+#include "timer.h"
+
+Timer::Timer(unsigned long time_interval, callback_ptr_ callback)
+    : time_interval_(time_interval), callback_(callback)
 {
-public:
-  Motor(int pin_a, int pin_b);
+  last_callback_ = millis();
+}
 
-  ~Motor();
-
-  /**
-   * Sets the speed of the motor.
-   * Sets the new speed and direction values and applies the changes to the pins. If the given value is positiv the
-   * new direction is FORWARD, BACKWARD otherwise.
-   *
-   * @param speed Value between -1 and 1.
-   */
-  void SetSpeed(float speed);
-
-private:
-  /**
-   * Direction of rotation.
-   */
-  enum Direction
+void Timer::Update()
+{
+  unsigned long time_diff = millis() - last_callback_;
+  if (time_diff >= time_interval_)
   {
-    FORWARD,
-    BACKWARD
-  };
-
-  static const float min_duty_cycle;
-  static const float max_duty_cycle;
-
-  /**
-   * Applies direction and speed to the pins.
-   */
-  void Write();
-
-  int pin_a_;
-  int pin_b_;
-  float speed_;
-  Direction direction_;
-};
-
-#endif /* _MOTOR_MOTOR_H_ */
+    // Correct timing to multiples of time_interval_ to prevent time drifting.
+    last_callback_ += (time_diff / time_interval_) * time_interval_;
+    callback_();
+  }
+}
