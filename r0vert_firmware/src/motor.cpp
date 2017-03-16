@@ -92,3 +92,34 @@ void Motor::Write()
     analogWrite(pin_b_, pwm_value);
   }
 }
+
+PIDController::PIDController(Motor *motor)
+    : motor_(motor),
+      controller_(0.5, 0.55, 0.001),
+      input_(0), output_(0), setpoint_(0), direction_(1)
+{
+
+}
+
+void PIDController::Init()
+{
+}
+
+void PIDController::EncoderUpdate(double value)
+{
+  controller_.Update(value);
+  if (fabs(setpoint_) >= 0.001)
+  {
+    motor_->SetSpeed(controller_.output());
+  }
+  else
+  {
+    motor_->SetSpeed(0);
+  }
+}
+
+void PIDController::SetSpeed(double speed)
+{
+  setpoint_ = speed;
+  controller_.setpoint(speed * 4);
+}

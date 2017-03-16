@@ -2,4 +2,4 @@
 .piolibdeps
 .travis.yml
 CMakeListsPrivate.txt
-lib/ros_lib
+lib

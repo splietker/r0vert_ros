@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, Malte Splietker
+/* Copyright (c) 2017, Malte Splietker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,80 +24,52 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MOTOR_MOTOR_H_
-#define _MOTOR_MOTOR_H_
+#include <Arduino.h>
+#include <ros.h>
 
 #include "PID.h"
 
-/**
- * An H-Bride driven motor.
- *
- * Implementation for driving a motor driven by an H-Bridge (e.g. LM298). The H-Bridge needs to be connected to two PWM
- * pins (pin_a and pin_b).
- */
-class Motor
+PID::PID(double Kp, double Ki, double Kd)
+    : Kp_(Kp), Ki_(Ki), Kd_(Kd)
 {
-public:
-  Motor(int pin_a, int pin_b);
 
-  ~Motor();
+}
 
-  /**
-   * Sets the speed of the motor.
-   * Sets the new speed and direction values and applies the changes to the pins. If the given value is positiv the
-   * new direction is FORWARD, BACKWARD otherwise.
-   *
-   * @param speed Value between -1 and 1.
-   */
-  void SetSpeed(float speed);
+double PID::Update(double measurement)
+{
+  unsigned long now = micros();
+  double time_diff = (now - previous_update_time_) * 1e-6;
 
-private:
-  /**
-   * Direction of rotation.
-   */
-  enum Direction
+  double error = setpoint_ - measurement;
+  integral_ += error * time_diff;
+  // Bounds against integral windup
+  integral_ = min(integral_, 10);
+  integral_ = max(integral_, -10);
+  double derivative = (error - previous_error_) / time_diff;
+
+  output_ = (Kp_ * error) + (Ki_ * integral_) + (Kd_ * derivative);
+  output_ = min(output_, 1);
+  output_ = max(output_, -1);
+  if (setpoint_ < 0)
   {
-    FORWARD,
-    BACKWARD
-  };
+    output_ = min(output_, 0);
+  }
+  else
+  {
+    output_ = max(output_, 0);
+  }
 
-  static const float min_duty_cycle;
-  static const float max_duty_cycle;
+  previous_error_ = error;
+  previous_update_time_ = now;
+  return output_;
+}
 
-  /**
-   * Applies direction and speed to the pins.
-   */
-  void Write();
-
-  int pin_a_;
-  int pin_b_;
-  float speed_;
-  Direction direction_;
-};
-
-class PIDController
+void PID::setpoint(double setpoint)
 {
-public:
-  PIDController(Motor *motor);
+  setpoint_ = setpoint;
+}
 
-  void Init();
-
-  void SetSpeed(double speed);
-
-  void EncoderUpdate(double value);
-
-private:
-  Motor *motor_;
-
-  PID controller_;
-
-  double input_;
-
-  double output_;
-
-  double setpoint_;
-
-  int direction_;
-};
-
-#endif /* _MOTOR_MOTOR_H_ */
+double PID::output()
+{
+  return output_;
+}

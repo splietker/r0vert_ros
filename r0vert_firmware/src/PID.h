@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, Malte Splietker
+/* Copyright (c) 2017, Malte Splietker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,80 +24,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MOTOR_MOTOR_H_
-#define _MOTOR_MOTOR_H_
+#ifndef R0VERT_FIRMWARE_PID_H
+#define R0VERT_FIRMWARE_PID_H
 
-#include "PID.h"
 
-/**
- * An H-Bride driven motor.
- *
- * Implementation for driving a motor driven by an H-Bridge (e.g. LM298). The H-Bridge needs to be connected to two PWM
- * pins (pin_a and pin_b).
- */
-class Motor
+class PID
 {
 public:
-  Motor(int pin_a, int pin_b);
+  PID(double Kp, double Ki, double Kd);
 
-  ~Motor();
+  double Update(double measurement);
 
-  /**
-   * Sets the speed of the motor.
-   * Sets the new speed and direction values and applies the changes to the pins. If the given value is positiv the
-   * new direction is FORWARD, BACKWARD otherwise.
-   *
-   * @param speed Value between -1 and 1.
-   */
-  void SetSpeed(float speed);
+  void setpoint(double setpoint);
+
+  double output();
 
 private:
-  /**
-   * Direction of rotation.
-   */
-  enum Direction
-  {
-    FORWARD,
-    BACKWARD
-  };
+  double Kp_;
 
-  static const float min_duty_cycle;
-  static const float max_duty_cycle;
+  double Ki_;
 
-  /**
-   * Applies direction and speed to the pins.
-   */
-  void Write();
-
-  int pin_a_;
-  int pin_b_;
-  float speed_;
-  Direction direction_;
-};
-
-class PIDController
-{
-public:
-  PIDController(Motor *motor);
-
-  void Init();
-
-  void SetSpeed(double speed);
-
-  void EncoderUpdate(double value);
-
-private:
-  Motor *motor_;
-
-  PID controller_;
-
-  double input_;
-
-  double output_;
+  double Kd_;
 
   double setpoint_;
 
-  int direction_;
+  double output_;
+
+  double integral_;
+
+  double previous_error_;
+
+  unsigned long previous_update_time_;
 };
 
-#endif /* _MOTOR_MOTOR_H_ */
+
+#endif //R0VERT_FIRMWARE_PID_H

@@ -33,12 +33,14 @@
 #include "motor.h"
 #include "battery.h"
 #include "timer.h"
+#include "wheel_encoder.h"
 
 
 ros::NodeHandle nh;
 
 // Subscribers
 void velocity_callback(const turtle_actionlib::Velocity &velocity_msg);
+
 ros::Subscriber<turtle_actionlib::Velocity> velocity_subscriber("velocity", &velocity_callback);
 
 // Publishers
@@ -47,14 +49,24 @@ ros::Publisher battery_publisher("battery", &battery_msg);
 
 // Timer set to publish status every 1000ms
 void publish_status();
+
 Timer publishing_timer(1000, &publish_status);
 
 // Hardware
-Motor motor_left(4, 5);
-Motor motor_right(6, 7);
+Motor motor_left(6, 7);
+Motor motor_right(4, 5);
+
+void motor_control();
+Timer motor_control_timer(20, &motor_control);
+PIDController controller_left(&motor_left);
+PIDController controller_right(&motor_right);
+
+WheelEncoder encoder_left(50, 52, 53);
+WheelEncoder encoder_right(50, 52, 51);
 
 Battery battery1(A0, 15.275);
 Battery battery2(A1, 15.218);
+//14.861825541788024
 
 void velocity_callback(const turtle_actionlib::Velocity &velocity_msg)
 {
@@ -66,7 +78,7 @@ void velocity_callback(const turtle_actionlib::Velocity &velocity_msg)
   }
   else
   {
-    float normalized_x = velocity_msg.angular / hypotenuse;
+    float normalized_x = -velocity_msg.angular / hypotenuse;
     angle = acos(normalized_x);
   }
 
@@ -79,23 +91,23 @@ void velocity_callback(const turtle_actionlib::Velocity &velocity_msg)
 
   if (heading > 0 and velocity_msg.linear > 0)
   {
-    motor_left.SetSpeed((1 - 2 * heading) * speed);
-    motor_right.SetSpeed(speed);
+    controller_left.SetSpeed((1 - 2 * heading) * speed);
+    controller_right.SetSpeed(speed);
   }
   else if (heading > 0 and velocity_msg.linear <= 0)
   {
-    motor_left.SetSpeed(-speed);
-    motor_right.SetSpeed((-1 + 2 * heading) * speed);
+    controller_left.SetSpeed(-speed);
+    controller_right.SetSpeed((-1 + 2 * heading) * speed);
   }
   else if (heading <= 0 and velocity_msg.linear > 0)
   {
-    motor_left.SetSpeed(speed);
-    motor_right.SetSpeed((1 + 2 * heading) * speed);
+    controller_left.SetSpeed(speed);
+    controller_right.SetSpeed((1 + 2 * heading) * speed);
   }
   else if (heading <= 0 and velocity_msg.linear <= 0)
   {
-    motor_left.SetSpeed((-1 - 2 * heading) * speed);
-    motor_right.SetSpeed(-speed);
+    controller_left.SetSpeed((-1 - 2 * heading) * speed);
+    controller_right.SetSpeed(-speed);
   }
 }
 
@@ -106,22 +118,38 @@ void publish_status()
   battery_publisher.publish(&battery_msg);
 }
 
+void motor_control()
+{
+  double velocity_left = encoder_left.Velocity();
+  double velocity_right = encoder_right.Velocity();
+  controller_left.EncoderUpdate(velocity_left);
+  controller_right.EncoderUpdate(-velocity_right);
+}
+
 void setup()
 {
   nh.getHardware()->setBaud(115200);
   nh.initNode();
   nh.subscribe(velocity_subscriber);
   nh.advertise(battery_publisher);
+
+  encoder_left.Init();
+  encoder_right.Init();
+  controller_left.Init();
+  controller_right.Init();
 }
 
 void loop()
 {
   nh.spinOnce();
 
+  encoder_left.Update();
+  encoder_right.Update();
   battery1.Update();
   battery2.Update();
 
   publishing_timer.Update();
+  motor_control_timer.Update();
 
   delay(1);
 }
