@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <name>r0vert</name>
+  <version>0.1.0</version>
+  <description>
+    This package provides the r0vert launch files.
+  </description>
+  <maintainer email="malte.splietker@gmail.com">Malte Splietker</maintainer>
+  <license>BSD</license>
+
+  <url>https://github.com/splietker/r0vert_ros</url>
+  <author>Malte Splietker</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>r0vert_firmware</build_depend>
+  <build_depend>r0vert_panel</build_depend>
+
+  <run_depend>r0vert_firmware</run_depend>
+  <run_depend>r0vert_panel</run_depend>
+</package>

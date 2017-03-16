@@ -12,6 +12,7 @@
 
   <!-- Teleop Node -->
   <node pkg="r0vert_teleop" type="teleop_joy" name="teleop_node">
+    <param name="max_speed" value="1.0" type="double"/>
     <param name="axis_linear" value="1" type="int"/>
     <param name="axis_angular" value="0" type="int"/>
   </node>
