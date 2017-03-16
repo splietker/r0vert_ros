@@ -1,4 +1,5 @@
 .pioenvs
-CMakeListsPrivate.txt
 .piolibdeps
+.travis.yml
+CMakeListsPrivate.txt
 lib/ros_lib
