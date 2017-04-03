@@ -24,11 +24,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import threading
-
-import Adafruit_CharLCD as LCD
+from threading import Timer, Event
 
 from rotary_encoder import EventType, Direction
+
 
 class MenuItem:
     def __init__(self, name, value=None):
@@ -38,9 +37,10 @@ class MenuItem:
     def value_string(self):
         return str(self.value)
 
+
 class Menu(MenuItem):
     def __init__(self, name, is_main_menu=False):
-        #super(Menu, self).__init__(name)
+        # super(Menu, self).__init__(name)
         self.name = name
         self.items = list()
 
@@ -48,6 +48,7 @@ class Menu(MenuItem):
 
     def add(self, menu_item):
         self.items.append(menu_item)
+
 
 class MenuViewer:
     def __init__(self, lcd, rotary_encoder, menu, scroll_overflow=False):
@@ -60,7 +61,7 @@ class MenuViewer:
         self.__selected_row = 0
 
         self.__max_name_length = 8
-        self.__max_value_length = 5
+        self.__max_value_length = 6
 
         self.__name_scroll_index = 0
         self.__name_scroll_direction = 1
@@ -73,7 +74,12 @@ class MenuViewer:
         self.__rotary_encoder.register_callback(EventType.ROTATION, self.__rotary_encoder_rotation)
         self.__rotary_encoder.register_callback(EventType.BUTTON, self.__rotary_encoder_button)
 
-        threading.Timer(1.0, self.scroll).start()
+        self.__stopped = False
+
+        Timer(1.0, self.scroll).start()
+
+    def stop(self):
+        self.__stopped = True
 
     def __rotary_encoder_rotation(self, direction):
         prior_item = self.__selected_item
@@ -104,10 +110,10 @@ class MenuViewer:
             self.__value_scroll_direction = 1
             self.__value_scroll_skip = 3
 
-            self.__show()
+            self.show()
 
     def __rotary_encoder_button(self, state):
-        self.__show()
+        self.show()
 
     def scroll(self):
         item = self.__menu.items[self.__selected_item]
@@ -119,7 +125,7 @@ class MenuViewer:
             if self.__max_name_length + self.__name_scroll_index >= name_length or self.__name_scroll_index == 0:
                 self.__name_scroll_direction *= -1
                 self.__name_scroll_skip = 3
-            name = item.name[self.__name_scroll_index:self.__max_name_length+self.__name_scroll_index]
+            name = item.name[self.__name_scroll_index:self.__max_name_length + self.__name_scroll_index]
             self.__lcd.set_cursor(1, self.__selected_row)
             self.__lcd.message(name)
 
@@ -131,13 +137,14 @@ class MenuViewer:
             if self.__max_value_length + self.__value_scroll_index >= value_length or self.__value_scroll_index == 0:
                 self.__value_scroll_direction *= -1
                 self.__value_scroll_skip = 3
-            value = item.value_string()[self.__value_scroll_index:self.__max_value_length+self.__value_scroll_index]
+            value = item.value_string()[self.__value_scroll_index:self.__max_value_length + self.__value_scroll_index]
             self.__lcd.set_cursor(self.__lcd._cols - self.__max_value_length, self.__selected_row)
             self.__lcd.message(value)
 
-        threading.Timer(0.5, self.scroll).start()
+        if not self.__stopped:
+            Timer(0.5, self.scroll).start()
 
-    def __show(self):
+    def show(self):
         self.__lcd.clear()
         lower_index = self.__selected_item - self.__selected_row
         row = 0
@@ -150,7 +157,7 @@ class MenuViewer:
 
             self.__lcd.message(item.name[0:self.__max_name_length])
 
-            value_string = str(item.value)
+            value_string = str(item.value_string())
             value_length = min(len(value_string), self.__max_value_length)
             self.__lcd.set_cursor(self.__lcd._cols - value_length, row)
             self.__lcd.message(value_string)

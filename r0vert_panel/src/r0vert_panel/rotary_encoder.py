@@ -71,9 +71,6 @@ class RotaryEncoder:
         GPIO.add_event_detect(self.__pin_b, GPIO.BOTH, callback=self.__rotation_callback, bouncetime=2)
         GPIO.add_event_detect(self.__pin_sw, GPIO.BOTH, callback=self.__push_button_callback, bouncetime=20)
 
-    def __del__(self):
-        GPIO.cleanup([self.__pin_a, self.__pin_b, self.__pin_sw])
-
     def register_callback(self, event_type, callback):
         self.__callbacks[event_type].append(callback)
 

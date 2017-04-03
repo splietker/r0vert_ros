@@ -26,33 +26,88 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+from threading import Thread, Event
 import rospy
-from std_msgs.msg import String
+import RPi.GPIO as GPIO
 
-from r0vert_panel import RotaryEncoder, EventType, Direction
-from r0vert_panel.menu import Menu, MenuItem, MenuViewer
+from r0vert_msgs.msg import BatteryVoltage
+from r0vert_panel import RotaryEncoder, EventType
+from r0vert_panel.menu import MenuViewer
+from r0vert_panel.status import Status
 
 import Adafruit_CharLCD as LCD
 
-# LED constants
-lcd_rs = 23
-lcd_en = 24
-lcd_d4 = 25
-lcd_d5 = 8
-lcd_d6 = 7
-lcd_d7 = 12
-lcd_backlight = 18
-lcd_columns = 16
-lcd_rows = 2
+lcd_config = {
+    "rs": 23,
+    "en": 24,
+    "d4": 25,
+    "d5": 8,
+    "d6": 7,
+    "d7": 12,
+    "cols": 16,
+    "lines": 2,
+    "backlight": 18,
+    "enable_pwm": True
+}
 
-def callback(data):
-    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+rotenc_config = {
+    "pin_a": 13,
+    "pin_b": 19,
+    "pin_sw": 26
+}
 
-def rotation_callback(direction):
-    print("rotation:", direction)
+status = Status()
+viewer = None
+rotenc = None
+lcd = None
+backlight_timer = None
 
-def button_callback(state):
-    print("button:", state)
+
+class BackLightTimer(Thread):
+    def __init__(self, timeout, lcd):
+        Thread.__init__(self)
+        self.timeout = timeout
+        self.lcd = lcd
+        self.timeout_event = Event()
+        self.stop_event = Event()
+
+    def stop(self):
+        self.stop_event.set()
+        self.timeout_event.set()
+
+    def reset(self):
+        lcd.set_backlight(0)
+        self.timeout_event.set()
+
+    def run(self):
+        while True:
+            self.timeout_event.wait(self.timeout)
+            if self.stop_event.is_set():
+                break
+            if not self.timeout_event.is_set():
+                lcd.set_backlight(1)
+            else:
+                self.timeout_event.clear()
+
+
+def rotenc_callback(value):
+    lcd.set_backlight(0);
+    backlight_timer.reset()
+
+
+def battery_callback(data):
+    status.battery1.value = data.battery1
+    status.battery2.value = data.battery2
+    viewer.show()
+
+
+def shutdown():
+    lcd.clear()
+    lcd.set_backlight(1)
+    backlight_timer.stop()
+    viewer.stop()
+    GPIO.cleanup()
+
 
 def main():
     # In ROS, nodes are uniquely named. If two nodes with the same
@@ -61,31 +116,28 @@ def main():
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
     rospy.init_node('panel', anonymous=True)
+    rospy.on_shutdown(shutdown)
 
-    rospy.Subscriber("chatter", String, callback)
+    global rotenc
+    rotenc = RotaryEncoder(**rotenc_config)
+    rotenc.register_callback(EventType.BUTTON, rotenc_callback)
+    rotenc.register_callback(EventType.ROTATION, rotenc_callback)
 
-    rotenc = RotaryEncoder(13, 19, 26)
-    rotenc.register_callback(EventType.ROTATION, rotation_callback)
-    rotenc.register_callback(EventType.BUTTON, button_callback)
-
-    lcd = LCD.Adafruit_CharLCD(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6, lcd_d7,
-                               lcd_columns, lcd_rows, lcd_backlight, enable_pwm=True)
+    global lcd, backlight_timer
+    lcd = LCD.Adafruit_CharLCD(**lcd_config)
     lcd.clear()
-    lcd.message("Yay!")
     lcd.set_backlight(0)
+    backlight_timer = BackLightTimer(5, lcd)
+    backlight_timer.start()
 
-    main_menu = Menu("main", True)
-    main_menu.add(MenuItem("item 1", 4277789))
-    main_menu.add(MenuItem("item 2", 13.3755))
-    main_menu.add(MenuItem("item 3", True))
-    main_menu.add(MenuItem("item 4 istolong", "meow"))
-    viewer = MenuViewer(lcd, rotenc, main_menu)
+    global status, viewer
+    viewer = MenuViewer(lcd, rotenc, status.menu)
+    viewer.show()
 
-    # spin() simply keeps python from exiting until this node is stopped
+    rospy.Subscriber("battery", BatteryVoltage, battery_callback)
+
     rospy.spin()
 
-    lcd.clear()
-    lcd.set_backlight(1)
 
 if __name__ == '__main__':
     main()
