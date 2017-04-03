@@ -29,6 +29,7 @@
 #include <ros.h>
 #include <turtle_actionlib/Velocity.h>
 #include <r0vert_msgs/BatteryVoltage.h>
+#include <r0vert_msgs/WheelVelocity.h>
 
 #include "motor.h"
 #include "battery.h"
@@ -46,17 +47,20 @@ ros::Subscriber<turtle_actionlib::Velocity> velocity_subscriber("velocity", &vel
 // Publishers
 r0vert_msgs::BatteryVoltage battery_msg;
 ros::Publisher battery_publisher("battery", &battery_msg);
+r0vert_msgs::WheelVelocity velocity_msg;
+ros::Publisher velocity_publisher("wheel_velocity", &velocity_msg);
 
-// Timer set to publish status every 1000ms
+// Publishing timers
 void publish_status();
 
-Timer publishing_timer(1000, &publish_status);
+Timer publish_status_timer(1000, &publish_status);
 
 // Hardware
 Motor motor_left(6, 7);
 Motor motor_right(4, 5);
 
 void motor_control();
+
 Timer motor_control_timer(20, &motor_control);
 PIDController controller_left(&motor_left);
 PIDController controller_right(&motor_right);
@@ -118,20 +122,41 @@ void publish_status()
   battery_publisher.publish(&battery_msg);
 }
 
+void publish_velocity()
+{
+  static unsigned int counter = 0;
+  counter += 1;
+  if (counter >= 5)
+  { // Publish every 5 motor_control() updates
+    velocity_msg.left /= 5;
+    velocity_msg.right /= 5;
+    velocity_publisher.publish(&velocity_msg);
+    velocity_msg.left = 0;
+    velocity_msg.right = 0;
+    counter = 0;
+  }
+}
+
 void motor_control()
 {
   double velocity_left = encoder_left.Velocity();
   double velocity_right = encoder_right.Velocity();
   controller_left.EncoderUpdate(velocity_left);
   controller_right.EncoderUpdate(-velocity_right);
+
+  velocity_msg.left += velocity_left;
+  velocity_msg.right += velocity_right;
+  publish_velocity();
 }
 
 void setup()
 {
+  Serial.begin(115200);
   nh.getHardware()->setBaud(115200);
   nh.initNode();
   nh.subscribe(velocity_subscriber);
   nh.advertise(battery_publisher);
+  nh.advertise(velocity_publisher);
 
   encoder_left.Init();
   encoder_right.Init();
@@ -148,7 +173,7 @@ void loop()
   battery1.Update();
   battery2.Update();
 
-  publishing_timer.Update();
+  publish_status_timer.Update();
   motor_control_timer.Update();
 
   delay(1);

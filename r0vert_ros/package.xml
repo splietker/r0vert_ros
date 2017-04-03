@@ -15,6 +15,7 @@
   <run_depend>r0vert_msgs</run_depend>
   <run_depend>r0vert_panel</run_depend>
   <run_depend>r0vert_teleop</run_depend>
+  <run_depend>r0vert</run_depend>
 
   <export>
    <metapackage/>
