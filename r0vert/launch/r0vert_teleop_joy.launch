@@ -16,4 +16,8 @@
     <param name="axis_linear" value="1" type="int"/>
     <param name="axis_angular" value="0" type="int"/>
   </node>
+
+  <!-- Panel Node -->
+  <node pkg="r0vert_panel" type="panel.py" name="panel_node">
+  </node>
 </launch>
