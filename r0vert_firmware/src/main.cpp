@@ -124,12 +124,22 @@ void publish_status()
 
 void publish_velocity()
 {
+  static const double velocity_threshold = 0.015;
   static unsigned int counter = 0;
   counter += 1;
   if (counter >= 5)
   { // Publish every 5 motor_control() updates
     velocity_msg.left /= 5;
     velocity_msg.right /= 5;
+
+    if (controller_left.set_speed() == 0 and controller_right.set_speed() == 0
+        and fabs(velocity_msg.left) < velocity_threshold
+        and fabs(velocity_msg.right) < velocity_threshold)
+    { // If motors set to stop and measured velocity close to 0
+      velocity_msg.left = 0;
+      velocity_msg.right = 0;
+    }
+
     velocity_publisher.publish(&velocity_msg);
     velocity_msg.left = 0;
     velocity_msg.right = 0;

@@ -66,14 +66,9 @@ double turn_distance(double value1, double value2)
 
 void WheelEncoder::Update()
 {
-  sensor_value_ = sensor_.Read() / 1024.0;
-
-  double diff = turn_distance(sensor_value_, velocity_turn_base_);
-  if (diff > 0.25 or diff < -0.25)
-  {
-    velocity_turn_sum_ += diff;
-    velocity_turn_base_ = sensor_value_;
-  }
+  double sensor_value = sensor_.Read() / 1024.0;
+  velocity_turn_sum_ += turn_distance(sensor_value, last_sensor_value_);
+  last_sensor_value_ = sensor_value;
 }
 
 double WheelEncoder::Velocity()
@@ -81,11 +76,9 @@ double WheelEncoder::Velocity()
   extern ros::NodeHandle nh;
   unsigned long current_time = micros();
 
-  velocity_turn_sum_ += turn_distance(sensor_value_, velocity_turn_base_);
   double current_velocity = velocity_turn_sum_ / ((current_time - last_velocity_calculation_time_) * 1e-6);
 
   last_velocity_calculation_time_ = current_time;
-  velocity_turn_base_ = sensor_value_;
   velocity_turn_sum_ = 0;
   return current_velocity;
 }

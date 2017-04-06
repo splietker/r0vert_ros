@@ -96,7 +96,7 @@ void Motor::Write()
 PIDController::PIDController(Motor *motor)
     : motor_(motor),
       controller_(0.5, 0.55, 0.001),
-      input_(0), output_(0), setpoint_(0), direction_(1)
+      input_(0), output_(0), set_speed_(0), direction_(1)
 {
 
 }
@@ -108,7 +108,7 @@ void PIDController::Init()
 void PIDController::EncoderUpdate(double value)
 {
   controller_.Update(value);
-  if (fabs(setpoint_) >= 0.001)
+  if (fabs(set_speed_) >= 0.001)
   {
     motor_->SetSpeed(controller_.output());
   }
@@ -120,6 +120,11 @@ void PIDController::EncoderUpdate(double value)
 
 void PIDController::SetSpeed(double speed)
 {
-  setpoint_ = speed;
+  set_speed_ = speed;
   controller_.setpoint(speed * 4);
+}
+
+const double PIDController::set_speed() const
+{
+  return set_speed_;
 }

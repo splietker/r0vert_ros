@@ -86,6 +86,8 @@ public:
 
   void EncoderUpdate(double value);
 
+  const double set_speed() const;
+
 private:
   Motor *motor_;
 
@@ -95,7 +97,7 @@ private:
 
   double output_;
 
-  double setpoint_;
+  double set_speed_;
 
   int direction_;
 };

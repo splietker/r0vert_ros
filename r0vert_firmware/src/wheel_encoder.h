@@ -52,13 +52,11 @@ public:
 private:
   AS5040 sensor_;
 
-  double sensor_value_;
+  double last_sensor_value_;
 
   unsigned long last_velocity_calculation_time_;
 
   double velocity_turn_sum_;
-
-  double velocity_turn_base_;
 };
 
 
