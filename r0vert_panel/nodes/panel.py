@@ -131,7 +131,7 @@ def main():
     backlight_timer.start()
 
     global status, viewer
-    viewer = MenuViewer(lcd, rotenc, status.menu)
+    viewer = MenuViewer(lcd, rotenc, status)
     viewer.show()
 
     rospy.Subscriber("battery", BatteryVoltage, battery_callback)

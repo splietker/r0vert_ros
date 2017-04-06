@@ -29,13 +29,16 @@ from threading import Timer, Event
 from rotary_encoder import EventType, Direction
 
 
-class MenuItem:
+class MenuItem(object):
     def __init__(self, name, value=None):
         self.name = name
         self.value = value
 
     def value_string(self):
         return str(self.value)
+
+    def update(self):
+        pass
 
 
 class Menu(MenuItem):
@@ -145,6 +148,7 @@ class MenuViewer:
             Timer(0.5, self.scroll).start()
 
     def show(self):
+        self.__menu.update()
         self.__lcd.clear()
         lower_index = self.__selected_item - self.__selected_row
         row = 0

@@ -1,3 +1,4 @@
+import glob
 from r0vert_panel.menu import Menu, MenuItem
 
 
@@ -6,11 +7,21 @@ class BatteryMenuItem(MenuItem):
         return "%.2fV" % self.value
 
 
-class Status:
+class Status(Menu):
     def __init__(self):
+        super(Status, self).__init__("status", True)
+
         self.battery1 = BatteryMenuItem("Bat1", 0.0)
         self.battery2 = BatteryMenuItem("Bat2", 0.0)
 
-        self.menu = Menu("status", True)
-        self.menu.add(self.battery1)
-        self.menu.add(self.battery2)
+        self.joy = MenuItem("Joy", False)
+
+        self.add(self.battery1)
+        self.add(self.battery2)
+        self.add(self.joy)
+
+    def update(self):
+        if len(glob.glob("/sys/class/power_supply/sony_controller_battery*")) > 0:
+            self.joy.value = True
+        else:
+            self.joy.value = False
