@@ -34,7 +34,7 @@
 class WheelEncoder
 {
 public:
-  WheelEncoder(uint8_t pin_DO, uint8_t pin_CLK, uint8_t pin_CS);
+  WheelEncoder(uint8_t pin_DO, uint8_t pin_CLK, uint8_t pin_CS, bool inverted=false);
 
   void Init();
 
@@ -51,6 +51,11 @@ public:
 
 private:
   AS5040 sensor_;
+
+  /**
+   * Denotes if the velocity reading should be reversed (e.g. if mounted on the other side)
+   */
+  bool inverted_;
 
   double last_sensor_value_;
 

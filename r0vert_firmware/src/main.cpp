@@ -66,7 +66,7 @@ PIDController controller_left(&motor_left);
 PIDController controller_right(&motor_right);
 
 WheelEncoder encoder_left(50, 52, 53);
-WheelEncoder encoder_right(50, 52, 51);
+WheelEncoder encoder_right(50, 52, 51, true);
 
 Battery battery1(A0, 15.275);
 Battery battery2(A1, 15.218);
@@ -152,7 +152,7 @@ void motor_control()
   double velocity_left = encoder_left.Velocity();
   double velocity_right = encoder_right.Velocity();
   controller_left.EncoderUpdate(velocity_left);
-  controller_right.EncoderUpdate(-velocity_right);
+  controller_right.EncoderUpdate(velocity_right);
 
   velocity_msg.left += velocity_left;
   velocity_msg.right += velocity_right;

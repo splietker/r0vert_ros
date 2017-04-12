@@ -27,8 +27,8 @@
 #include <ros.h>
 #include "wheel_encoder.h"
 
-WheelEncoder::WheelEncoder(uint8_t pin_DO, uint8_t pin_CLK, uint8_t pin_CS)
-    : sensor_(pin_DO, pin_CLK, pin_CS)
+WheelEncoder::WheelEncoder(uint8_t pin_DO, uint8_t pin_CLK, uint8_t pin_CS, bool inverted)
+    : sensor_(pin_DO, pin_CLK, pin_CS), inverted_(inverted)
 {
 
 }
@@ -80,5 +80,5 @@ double WheelEncoder::Velocity()
 
   last_velocity_calculation_time_ = current_time;
   velocity_turn_sum_ = 0;
-  return current_velocity;
+  return inverted_ ? -current_velocity : current_velocity;
 }
