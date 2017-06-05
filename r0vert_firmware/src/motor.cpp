@@ -95,7 +95,7 @@ void Motor::Write()
 
 PIDController::PIDController(Motor *motor)
     : motor_(motor),
-      controller_(0.5, 0.55, 0.001),
+      controller_(0.5, 0.55, 0.000),
       input_(0), output_(0), set_speed_(0), direction_(1)
 {
 

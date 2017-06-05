@@ -59,9 +59,6 @@ Timer publish_status_timer(1000, &publish_status);
 Motor motor_left(6, 7);
 Motor motor_right(4, 5);
 
-void motor_control();
-
-Timer motor_control_timer(20, &motor_control);
 PIDController controller_left(&motor_left);
 PIDController controller_right(&motor_right);
 
@@ -125,12 +122,15 @@ void publish_status()
 void publish_velocity()
 {
   static const double velocity_threshold = 0.015;
+  static unsigned long last_publish = millis();
   static unsigned int counter = 0;
+
   counter += 1;
-  if (counter >= 5)
-  { // Publish every 5 motor_control() updates
-    velocity_msg.left /= 5;
-    velocity_msg.right /= 5;
+  unsigned long now = millis();
+  if (now - last_publish > 100)
+  { // Publish ~100ms
+    velocity_msg.left /= counter;
+    velocity_msg.right /= counter;
 
     if (controller_left.set_speed() == 0 and controller_right.set_speed() == 0
         and fabs(velocity_msg.left) < velocity_threshold
@@ -144,6 +144,7 @@ void publish_velocity()
     velocity_msg.left = 0;
     velocity_msg.right = 0;
     counter = 0;
+    last_publish = now;
   }
 }
 
@@ -184,7 +185,6 @@ void loop()
   battery2.Update();
 
   publish_status_timer.Update();
-  motor_control_timer.Update();
+  motor_control();
 
-  delay(1);
 }
