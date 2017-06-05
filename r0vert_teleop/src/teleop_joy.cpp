@@ -33,6 +33,12 @@ class TeleopJoy
 public:
   TeleopJoy();
 
+  enum Mode {
+    OneStick = 0,
+    TwoStick,
+    Tank
+  };
+
 private:
   void JoyCallback(const sensor_msgs::Joy::ConstPtr &ptr);
 
@@ -40,14 +46,21 @@ private:
 
   ros::Publisher velocity_pub_;
   ros::Subscriber joystick_sub_;
-  int axis_linear_, axis_angular_;
+  int axis_angular_, axis_linear_, axis_throttle_;
+  double max_speed_;
+
+  Mode mode_;
 };
 
-TeleopJoy::TeleopJoy()
+TeleopJoy::TeleopJoy() :
+  mode_(TwoStick)
 {
   // Create joystick axis mapping parameters
-  n_.param("axis_linear", axis_linear_, 1);
-  n_.param("axis_angular", axis_angular_, 0);
+  ros::NodeHandle private_node_handle("~");
+  private_node_handle.param("axis_angular", axis_angular_, 0);
+  private_node_handle.param("axis_linear", axis_linear_, 1);
+  private_node_handle.param("axis_throttle", axis_throttle_, 2);
+  private_node_handle.param("max_speed", max_speed_, 1.0);
 
   velocity_pub_ = n_.advertise<turtle_actionlib::Velocity>("velocity", 1);
   joystick_sub_ = n_.subscribe<sensor_msgs::Joy>("joy", 10, &TeleopJoy::JoyCallback, this);
@@ -55,11 +68,35 @@ TeleopJoy::TeleopJoy()
 
 void TeleopJoy::JoyCallback(const sensor_msgs::Joy::ConstPtr &ptr)
 {
-  ROS_DEBUG("Received: v=%f, a=%f", (float) ptr->axes[axis_linear_], (float) ptr->axes[axis_angular_]);
-  turtle_actionlib::Velocity velocity;
-  velocity.linear = (float) ptr->axes[axis_linear_];
-  velocity.angular = (float) ptr->axes[axis_angular_];
-  velocity_pub_.publish(velocity);
+  if (ptr->buttons[12])
+  {
+    mode_ = static_cast<Mode>((mode_ + 1) % 3);
+    ROS_INFO("New mode: %d", mode_);
+  }
+
+  if (mode_ == OneStick)
+  {
+    //n_.getParam("max_speed", max_speed_);
+    ROS_DEBUG("Received: v=%f, a=%f", (float) ptr->axes[axis_linear_], (float) ptr->axes[axis_angular_]);
+    turtle_actionlib::Velocity velocity;
+    velocity.linear = (float) ptr->axes[axis_linear_] * (float) max_speed_;
+    velocity.angular = (float) ptr->axes[axis_angular_] * (float) max_speed_;
+    velocity_pub_.publish(velocity);
+  }
+  else if (mode_ == TwoStick)
+  {
+    turtle_actionlib::Velocity velocity;
+    velocity.linear = (float) ptr->axes[1] * (float) max_speed_;
+    velocity.angular = (float) ptr->axes[2] * (float) max_speed_;
+    velocity_pub_.publish(velocity);
+  }
+  else if (mode_ == Tank)
+  {
+    turtle_actionlib::Velocity velocity;
+    velocity.linear =  ((float) ptr->axes[3] + ptr->axes[1]) * (float) max_speed_ / 2;
+    velocity.angular = ((float) ptr->axes[3] - ptr->axes[1]) * (float) max_speed_ / 2;
+    velocity_pub_.publish(velocity);
+  }
 }
 
 int main(int argc, char *argv[])
