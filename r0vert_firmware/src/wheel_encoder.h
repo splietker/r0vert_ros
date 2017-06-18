@@ -49,6 +49,13 @@ public:
    */
   double Velocity();
 
+  /**
+   * Calculates the diff since the last time this method was called (in turns)
+   *
+   * @return Rotational diff since last call.
+   */
+  double IncrementalDiff();
+
 private:
   AS5040 sensor_;
 
@@ -57,7 +64,9 @@ private:
    */
   bool inverted_;
 
-  double last_sensor_value_;
+  double last_incremental_diff_sensor_value_;
+
+  double last_velocity_sensor_value_;
 
   unsigned long last_velocity_calculation_time_;
 

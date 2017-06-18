@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(r0vert_teleop)
 
+set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS}")
+
 find_package(catkin REQUIRED COMPONENTS
   joy
   roscpp

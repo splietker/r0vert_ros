@@ -55,6 +55,11 @@ void publish_status();
 
 Timer publish_status_timer(1000, &publish_status);
 
+// Publishing timers
+void publish_velocity();
+
+Timer publish_velocity_timer(50, &publish_velocity);
+
 // Hardware
 Motor motor_left(6, 7);
 Motor motor_right(4, 5);
@@ -121,31 +126,25 @@ void publish_status()
 
 void publish_velocity()
 {
-  static const double velocity_threshold = 0.015;
-  static unsigned long last_publish = millis();
-  static unsigned int counter = 0;
+  static const double velocity_threshold = 0.02;
+  static unsigned long last_publish_time = micros();
+  unsigned long current_time = micros();
+  double time_diff = (current_time - last_publish_time) * 1e-6;
+  velocity_msg.left = encoder_left.IncrementalDiff() / time_diff;
+  velocity_msg.right = encoder_right.IncrementalDiff() / time_diff;
+  velocity_msg.time = time_diff;
 
-  counter += 1;
-  unsigned long now = millis();
-  if (now - last_publish > 100)
-  { // Publish ~100ms
-    velocity_msg.left /= counter;
-    velocity_msg.right /= counter;
-
-    if (controller_left.set_speed() == 0 and controller_right.set_speed() == 0
-        and fabs(velocity_msg.left) < velocity_threshold
-        and fabs(velocity_msg.right) < velocity_threshold)
-    { // If motors set to stop and measured velocity close to 0
-      velocity_msg.left = 0;
-      velocity_msg.right = 0;
-    }
-
-    velocity_publisher.publish(&velocity_msg);
+  if (controller_left.set_speed() == 0 and controller_right.set_speed() == 0
+      and fabs(velocity_msg.left) < velocity_threshold
+      and fabs(velocity_msg.right) < velocity_threshold)
+  { // If motors set to stop and measured velocity close to 0
     velocity_msg.left = 0;
     velocity_msg.right = 0;
-    counter = 0;
-    last_publish = now;
   }
+
+  velocity_publisher.publish(&velocity_msg);
+
+  last_publish_time = current_time;
 }
 
 void motor_control()
@@ -157,7 +156,6 @@ void motor_control()
 
   velocity_msg.left += velocity_left;
   velocity_msg.right += velocity_right;
-  publish_velocity();
 }
 
 void setup()
@@ -185,6 +183,6 @@ void loop()
   battery2.Update();
 
   publish_status_timer.Update();
+  publish_velocity_timer.Update();
   motor_control();
-
 }

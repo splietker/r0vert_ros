@@ -67,8 +67,8 @@ double turn_distance(double value1, double value2)
 void WheelEncoder::Update()
 {
   double sensor_value = sensor_.Read() / 1024.0;
-  velocity_turn_sum_ += turn_distance(sensor_value, last_sensor_value_);
-  last_sensor_value_ = sensor_value;
+  velocity_turn_sum_ += turn_distance(sensor_value, last_velocity_sensor_value_);
+  last_velocity_sensor_value_ = sensor_value;
 }
 
 double WheelEncoder::Velocity()
@@ -81,4 +81,12 @@ double WheelEncoder::Velocity()
   last_velocity_calculation_time_ = current_time;
   velocity_turn_sum_ = 0;
   return inverted_ ? -current_velocity : current_velocity;
+}
+
+double WheelEncoder::IncrementalDiff()
+{
+  double sensor_value = sensor_.Read() / 1024.0;
+  double result = turn_distance(sensor_value, last_incremental_diff_sensor_value_);
+  last_incremental_diff_sensor_value_ = sensor_value;
+  return inverted_ ? -result : result;
 }
