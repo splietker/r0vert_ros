@@ -27,6 +27,9 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
 #include <turtle_actionlib/Velocity.h>
+#include <chrono>
+
+using namespace std::chrono;
 
 class TeleopJoy
 {
@@ -50,6 +53,7 @@ private:
   double max_speed_;
 
   Mode mode_;
+  std::chrono::system_clock::time_point last_mode_change_;
 };
 
 TeleopJoy::TeleopJoy() :
@@ -70,8 +74,14 @@ void TeleopJoy::JoyCallback(const sensor_msgs::Joy::ConstPtr &ptr)
 {
   if (ptr->buttons[12])
   {
-    mode_ = static_cast<Mode>((mode_ + 1) % 3);
-    ROS_INFO("New mode: %d", mode_);
+    system_clock::time_point now = system_clock::now();
+    milliseconds diff = duration_cast<milliseconds>(now - last_mode_change_);
+    if (diff.count() > 200)
+    {
+      mode_ = static_cast<Mode>((mode_ + 1) % 3);
+      ROS_INFO("New mode: %d", mode_);
+      last_mode_change_ = now;
+    }
   }
 
   if (mode_ == OneStick)
