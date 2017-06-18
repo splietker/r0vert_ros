@@ -1,0 +1,36 @@
+<launch>
+    <!-- Serial Node-->
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node" respawn="true"
+          launch-prefix="taskset -a -c 3">
+        <param name="port" value="/dev/ttyUSB0"/>
+        <param name="baud" value="115200"/>
+    </node>
+
+    <!-- Joystick Node -->
+    <node respawn="true" pkg="joy" type="joy_node" name="joy_node" launch-prefix="taskset -a -c 3">
+        <param name="dev" type="string" value="/dev/input/js0"/>
+    </node>
+
+    <!-- Teleop Node -->
+    <node pkg="r0vert_teleop" type="teleop_joy" name="teleop_node" launch-prefix="taskset -a -c 3">
+        <param name="max_speed" value="0.5" type="double"/>
+        <param name="axis_linear" value="1" type="int"/>
+        <param name="axis_angular" value="0" type="int"/>
+        <remap from="velocity" to="velocity_intercept"/>
+    </node>
+
+    <!-- Panel Node -->
+    <node pkg="r0vert_panel" type="panel.py" name="panel_node" launch-prefix="taskset -a -c 3">
+    </node>
+
+    <!-- Camera recorder node -->
+    <node pkg="r0vert_sequence_recorder" type="sequence_recorder_node" name="sequence_recorder"
+          launch-prefix="gdb -ex run --args">
+        <param name="capture_device" value="0" type="int"/>
+        <param name="output_directory" value="/tmp/recordings" type="string"/>
+        <param name="image_width" value="320" type="int"/>
+        <param name="image_height" value="240" type="int"/>
+        <param name="grayscale" value="true" type="bool"/>
+        <param name="still_images" value="true" type="bool"/>
+    </node>
+</launch>

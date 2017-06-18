@@ -1,0 +1,12 @@
+<launch>
+    <!-- Camera recorder node -->
+    <node pkg="r0vert_sequence_recorder" type="sequence_recorder_node" name="sequence_recorder"
+            launch-prefix="gdb -ex run --args">
+        <param name="capture_device" value="0" type="int"/>
+        <param name="output_directory" value="/tmp/recordings" type="string"/>
+        <param name="image_width" value="320" type="int"/>
+        <param name="image_height" value="240" type="int"/>
+        <param name="framerate" value="5" type="int"/>
+        <param name="grayscale" value="true" type="bool"/>
+    </node>
+</launch>
