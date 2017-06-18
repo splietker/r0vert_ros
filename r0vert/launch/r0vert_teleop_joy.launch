@@ -1,23 +1,23 @@
 <launch>
   <!-- Serial Node-->
-  <node pkg="rosserial_python" type="serial_node.py" name="serial_node" respawn="true">
-    <param name="port" value="/dev/ttyACM0"/>
+  <node pkg="rosserial_python" type="serial_node.py" name="serial_node" respawn="true" launch-prefix="taskset -a -c 3">
+    <param name="port" value="/dev/ttyUSB0"/>
     <param name="baud" value="115200"/>
   </node>
 
   <!-- Joystick Node -->
-  <node respawn="true" pkg="joy" type="joy_node" name="joy_node" >
+  <node respawn="true" pkg="joy" type="joy_node" name="joy_node" launch-prefix="taskset -a -c 3">
     <param name="dev" type="string" value="/dev/input/js0" />
   </node>
 
   <!-- Teleop Node -->
-  <node pkg="r0vert_teleop" type="teleop_joy" name="teleop_node">
+  <node pkg="r0vert_teleop" type="teleop_joy" name="teleop_node" launch-prefix="taskset -a -c 3">
     <param name="max_speed" value="1.0" type="double"/>
     <param name="axis_linear" value="1" type="int"/>
     <param name="axis_angular" value="0" type="int"/>
   </node>
 
   <!-- Panel Node -->
-  <node pkg="r0vert_panel" type="panel.py" name="panel_node">
+  <node pkg="r0vert_panel" type="panel.py" name="panel_node" launch-prefix="taskset -a -c 3">
   </node>
 </launch>
